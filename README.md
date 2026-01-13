@@ -20,9 +20,31 @@ A self-contained Docker container with Claude Code CLI, Python MCP servers, and 
 
 - Docker installed
 - Docker Compose installed (optional, but recommended for local development)
-- Anthropic API key (for text analysis features)
+- Claude Code OAuth token (get from https://console.anthropic.com/)
 
-### Option 1: Using Docker Compose (Recommended for Local Development)
+### Option 1: Using Pre-built Image from GitHub Container Registry (Easiest)
+
+Pull the latest pre-built image:
+
+```bash
+docker pull ghcr.io/dapperdivers/cybersecurity_news_agent:latest
+```
+
+Run it:
+
+```bash
+docker run -it \
+  -e CLAUDE_CODE_OAUTH_TOKEN=your-token-here \
+  -v $(pwd)/outputs:/app/outputs \
+  ghcr.io/dapperdivers/cybersecurity_news_agent:latest
+```
+
+**Available tags:**
+- `latest` - Latest build from main branch
+- `v1.0.0` - Specific version releases
+- `main-sha-abc123` - Specific commit builds
+
+### Option 2: Using Docker Compose (Recommended for Local Development)
 
 **Setup:**
 1. Copy `.env.example` to `.env`:
@@ -71,9 +93,9 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Option 2: Using Docker Directly
+### Option 3: Building Locally
 
-### Build the Container
+#### Build the Container
 
 **Basic build:**
 ```bash
