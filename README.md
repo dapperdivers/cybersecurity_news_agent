@@ -11,6 +11,10 @@ A self-contained Docker container with Claude Code CLI, Python MCP servers, and 
 - **Pre-configured Agents**:
   - `news-aggregator`: Fetches and organizes cybersecurity news from RSS feeds
   - `security-analyst`: Analyzes and summarizes security content, CVEs, and threat reports
+- **Pre-built Skills**:
+  - `security-intelligence-analysis`: Structured JSON intelligence reports (daily/weekly)
+  - `cve-deep-dive`: Detailed CVE analysis with IOC extraction
+  - `threat-report-generator`: Markdown report generation from JSON analysis
 - **Default Feeds**: 10+ curated cybersecurity news sources
 - **Security**: Runs as non-root user by default
 
@@ -155,9 +159,18 @@ cybersecurity_news_agent/
 │   │   │   ├── news-aggregator.md
 │   │   │   └── security-analyst.md
 │   │   ├── config/              # Configuration files
-│   │   │   ├── claude-settings.json # MCP server registration
+│   │   │   ├── .mcp.json            # MCP server registration
 │   │   │   └── default_feeds.json   # RSS feed sources
-│   │   └── skills/              # Reusable workflows (empty for now)
+│   │   └── skills/              # Reusable workflows with templates
+│   │       ├── security-intelligence-analysis/
+│   │       │   ├── SKILL.md
+│   │       │   └── templates/   # JSON output templates
+│   │       ├── cve-deep-dive/
+│   │       │   ├── SKILL.md
+│   │       │   └── templates/   # CVE analysis templates
+│   │       └── threat-report-generator/
+│   │           ├── SKILL.md
+│   │           └── templates/   # Markdown report templates
 │   └── mcp-servers/             # Python MCP servers
 │       ├── rss_fetcher/         # RSS feed fetching tools
 │       └── text_analyzer/       # Text summarization tools
@@ -225,6 +238,62 @@ cybersecurity_news_agent/
 - Parameters:
   - `text` (required): Text to analyze
   - `num_points` (optional): Number of points to extract (default: 5)
+
+## Skills
+
+### security-intelligence-analysis
+
+Analyzes cybersecurity RSS feeds and generates structured intelligence reports in JSON format.
+
+**Output Modes:**
+- Daily briefs (last 24 hours)
+- Weekly summaries (last 7 days)
+
+**Features:**
+- Strict JSON schema enforcement
+- Article categorization (critical alerts, vulnerabilities, breaches, advisories, industry news)
+- Severity assessment
+- Automated filtering and deduplication
+- Template-driven output for consistent formatting
+
+**Output Location:** `/app/outputs/daily-brief-YYYY-MM-DD.json` or `/app/outputs/weekly-summary-YYYY-MM-DD.json`
+
+**Usage:** Invoked by the `news-aggregator` agent
+
+### cve-deep-dive
+
+Performs comprehensive CVE vulnerability analysis with IOC extraction.
+
+**Output Formats:**
+1. **Standard CVE Analysis** - Detailed analysis with CVSS scores, IOCs, affected systems, and mitigations
+2. **Package Vulnerability Format** - GitHub package search compatible format for dependency scanning
+
+**Features:**
+- CVSS score extraction and severity assessment
+- IOC extraction (IPs, domains, file hashes, indicators)
+- Affected system identification
+- Mitigation and patch documentation
+- Exploitation status tracking
+- Template-driven JSON output
+
+**Output Location:** `/app/outputs/cve-analysis-[CVE-ID]-YYYY-MM-DD.json` or `/app/outputs/package-vulnerabilities-YYYY-MM-DD.json`
+
+**Usage:** Invoked by the `security-analyst` agent
+
+### threat-report-generator
+
+Transforms structured security analysis JSON into professional markdown reports.
+
+**Features:**
+- Converts JSON analysis to human-readable markdown
+- Generates accompanying metadata JSON
+- Professional formatting with sections, tables, and links
+- Distribution-ready output
+- Supports both daily and weekly report formats
+
+**Output Location:** `/app/outputs/threat-report-[type]-YYYY-MM-DD.md` and `/app/outputs/threat-report-[type]-YYYY-MM-DD-metadata.json`
+
+**Usage:** Optionally invoked by either agent for stakeholder distribution
 
 ## Agents
 
@@ -306,13 +375,22 @@ model: sonnet
 Your agent's system prompt and instructions...
 ```
 
-### Add Skills
+### Add Custom Skills
 
-Create reusable workflows in `src/claude-code/skills/` directory as markdown files.
+The container comes with 3 pre-built skills. To add more reusable workflows, create new skill directories in `src/claude-code/skills/`:
+
+```
+src/claude-code/skills/your-skill-name/
+├── SKILL.md                    # Skill instructions
+└── templates/                  # Optional templates
+    └── your-template.json
+```
+
+Skills are automatically available to all agents once the container is rebuilt.
 
 ### Extend MCP Servers
 
-Add new Python MCP servers in `src/mcp-servers/` and register them in `src/claude-code/config/claude-settings.json`.
+Add new Python MCP servers in `src/mcp-servers/` and register them in `src/claude-code/.mcp.json`.
 
 ## Volume Mounts
 
