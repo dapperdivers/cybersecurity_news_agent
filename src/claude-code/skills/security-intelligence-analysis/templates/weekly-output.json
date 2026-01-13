@@ -1,0 +1,23 @@
+{
+  "executive_summary": "",
+  "top_critical_items": [
+    {
+      "title": "",
+      "days_mentioned": 0,
+      "summary": "",
+      "impact": "",
+      "trend": "",
+      "recommended_actions": ""
+    }
+  ],
+  "trends": {
+    "emerging_threats": [],
+    "persistent_vulnerabilities": [],
+    "patches_mitigations": []
+  },
+  "metadata": {
+    "reports_analyzed": 0,
+    "date_range": "",
+    "timestamp": ""
+  }
+}

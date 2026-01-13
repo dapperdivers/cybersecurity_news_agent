@@ -1,0 +1,55 @@
+services:
+  cybersec-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: cybersec-news-agent
+
+    # Load environment variables from .env file
+    env_file:
+      - .env
+
+    # Runtime environment variables
+    environment:
+      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+      - HOME=/home/agent
+      # Runtime UID/GID mapping (handled by entrypoint.sh)
+      - USER_UID=${USER_UID:-1000}
+      - USER_GID=${USER_GID:-1000}
+
+    # Interactive terminal support
+    stdin_open: true
+    tty: true
+
+    # Volume mounts for local development
+    volumes:
+      # Mount all MCP servers for live editing
+      - ./src/mcp-servers:/app/mcp-servers
+
+      # Mount agent definitions and skills for live editing
+      - ./src/claude-code/agents:/home/agent/.claude/agents
+      - ./src/claude-code/skills:/home/agent/.claude/skills
+
+      # Mount outputs directory to access generated reports
+      - ./outputs:/app/outputs
+
+      # Optional: Uncomment if you need to frequently edit default feeds
+      # (otherwise they're baked into the image and require rebuild to change)
+      # - ./src/claude-code/config/default_feeds.json:/app/mcp-servers/rss_fetcher/config/default_feeds.json
+
+    # Keep container running
+    command: /bin/bash
+
+    # Network configuration (optional)
+    # network_mode: bridge
+
+    # Resource limits (optional, adjust as needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 4G
+    #     reservations:
+    #       cpus: '1'
+    #       memory: 2G

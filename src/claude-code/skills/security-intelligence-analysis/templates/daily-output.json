@@ -1,0 +1,28 @@
+{
+  "executive_summary": "",
+  "categories": {
+    "critical_alerts": [
+      {
+        "title": "",
+        "source": "",
+        "date": "",
+        "summary": "",
+        "impact": "",
+        "affected_systems": "",
+        "severity": "",
+        "recommended_actions": "",
+        "link": ""
+      }
+    ],
+    "vulnerabilities": [],
+    "breaches_incidents": [],
+    "advisories": [],
+    "industry_news": []
+  },
+  "metadata": {
+    "total_articles": 0,
+    "analyzed_count": 0,
+    "timestamp": "",
+    "analysis_type": "daily"
+  }
+}

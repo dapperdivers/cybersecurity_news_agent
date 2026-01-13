@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "rss_fetcher": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["/app/mcp-servers/rss_fetcher/server.py"],
+      "env": {}
+    },
+    "text_analyzer": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["/app/mcp-servers/text_analyzer/server.py"],
+      "env": {}
+    }
+  }
+}

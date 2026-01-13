@@ -1,0 +1,31 @@
+{
+  "report_id": "",
+  "report_type": "",
+  "generated_date": "",
+  "coverage_period": {
+    "start": "",
+    "end": ""
+  },
+  "statistics": {
+    "total_items": 0,
+    "critical_count": 0,
+    "high_count": 0,
+    "medium_count": 0,
+    "low_count": 0,
+    "categories": {
+      "critical_alerts": 0,
+      "vulnerabilities": 0,
+      "breaches_incidents": 0,
+      "advisories": 0,
+      "industry_news": 0
+    }
+  },
+  "sources": [],
+  "top_threats": [],
+  "keywords": [],
+  "metadata": {
+    "generator": "cybersec-news-agent",
+    "version": "1.0",
+    "format": "markdown"
+  }
+}
