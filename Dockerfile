@@ -23,9 +23,11 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     python-dateutil \
     anthropic
 
-# Create agent user (UID 1000 matches default node user)
-# This simplifies permission management across different host environments
-RUN useradd -u 1000 -m -d /home/agent -s /bin/bash agent 2>/dev/null || true
+# Create agent user and home directory
+# Use numeric UID/GID for cross-platform compatibility
+RUN groupadd -g 1000 agent 2>/dev/null || true \
+    && useradd -u 1000 -g 1000 -m -d /home/agent -s /bin/bash agent 2>/dev/null || true \
+    && mkdir -p /home/agent
 
 # Create application directory structure
 RUN mkdir -p /app/mcp-servers/rss_fetcher/config \
@@ -34,18 +36,18 @@ RUN mkdir -p /app/mcp-servers/rss_fetcher/config \
     && mkdir -p /home/agent/.claude/agents \
     && mkdir -p /home/agent/.claude/skills
 
-# Copy MCP servers
-COPY --chown=agent:agent src/mcp-servers/rss_fetcher/ /app/mcp-servers/rss_fetcher/
-COPY --chown=agent:agent src/mcp-servers/text_analyzer/ /app/mcp-servers/text_analyzer/
+# Copy MCP servers (use numeric UID:GID for reliability)
+COPY --chown=1000:1000 src/mcp-servers/rss_fetcher/ /app/mcp-servers/rss_fetcher/
+COPY --chown=1000:1000 src/mcp-servers/text_analyzer/ /app/mcp-servers/text_analyzer/
 
 # Copy agent definitions
-COPY --chown=agent:agent src/claude-code/agents/ /home/agent/.claude/agents/
+COPY --chown=1000:1000 src/claude-code/agents/ /home/agent/.claude/agents/
 
 # Copy skills
-COPY --chown=agent:agent src/claude-code/skills/ /home/agent/.claude/skills/
+COPY --chown=1000:1000 src/claude-code/skills/ /home/agent/.claude/skills/
 
 # Copy MCP server configuration to correct location for Claude Code
-COPY --chown=agent:agent src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
+COPY --chown=1000:1000 src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
 
 # Create inline init script for credentials setup
 RUN echo '#!/bin/bash\n\
@@ -56,16 +58,16 @@ if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then\n\
 fi\n\
 exec "$@"' > /usr/local/bin/init.sh && chmod +x /usr/local/bin/init.sh
 
-# Set permissions for output directory
-RUN chown -R agent:agent /app/outputs /home/agent
+# Set permissions for output directory (use numeric UID:GID for reliability)
+RUN chown -R 1000:1000 /app/outputs /home/agent
 
 # Set environment variables
 ENV DEFAULT_FEEDS_PATH="/app/mcp-servers/rss_fetcher/config/default_feeds.json" \
     OUTPUT_DIR="/app/outputs" \
     HOME="/home/agent"
 
-# Switch to agent user
-USER agent
+# Switch to non-root user (UID 1000)
+USER 1000
 
 # Set working directory
 WORKDIR /home/agent
