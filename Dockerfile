@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     git \
     curl \
-    sudo \
-    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code CLI globally
@@ -25,8 +23,11 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     python-dateutil \
     anthropic
 
+# Create agent user (UID 1000 matches default node user)
+# This simplifies permission management across different host environments
+RUN useradd -u 1000 -m -d /home/agent -s /bin/bash agent 2>/dev/null || true
+
 # Create application directory structure
-# User creation is handled at runtime by entrypoint.sh
 RUN mkdir -p /app/mcp-servers/rss_fetcher/config \
     && mkdir -p /app/mcp-servers/text_analyzer \
     && mkdir -p /app/outputs \
@@ -34,32 +35,43 @@ RUN mkdir -p /app/mcp-servers/rss_fetcher/config \
     && mkdir -p /home/agent/.claude/skills
 
 # Copy MCP servers
-COPY src/mcp-servers/rss_fetcher/ /app/mcp-servers/rss_fetcher/
-COPY src/mcp-servers/text_analyzer/ /app/mcp-servers/text_analyzer/
+COPY --chown=agent:agent src/mcp-servers/rss_fetcher/ /app/mcp-servers/rss_fetcher/
+COPY --chown=agent:agent src/mcp-servers/text_analyzer/ /app/mcp-servers/text_analyzer/
 
 # Copy agent definitions
-COPY src/claude-code/agents/ /home/agent/.claude/agents/
+COPY --chown=agent:agent src/claude-code/agents/ /home/agent/.claude/agents/
 
-# Copy skills (if any)
-COPY src/claude-code/skills/ /home/agent/.claude/skills/
+# Copy skills
+COPY --chown=agent:agent src/claude-code/skills/ /home/agent/.claude/skills/
 
 # Copy MCP server configuration to correct location for Claude Code
-COPY src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
+COPY --chown=agent:agent src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
 
-# Copy entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Create inline init script for credentials setup
+RUN echo '#!/bin/bash\n\
+if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then\n\
+  mkdir -p ~/.claude\n\
+  echo "{\"oauth\":{\"access_token\":\"$CLAUDE_CODE_OAUTH_TOKEN\"}}" > ~/.claude/.credentials.json\n\
+  chmod 600 ~/.claude/.credentials.json\n\
+fi\n\
+exec "$@"' > /usr/local/bin/init.sh && chmod +x /usr/local/bin/init.sh
 
-# Set environment variables with defaults
+# Set permissions for output directory
+RUN chown -R agent:agent /app/outputs /home/agent
+
+# Set environment variables
 ENV DEFAULT_FEEDS_PATH="/app/mcp-servers/rss_fetcher/config/default_feeds.json" \
     OUTPUT_DIR="/app/outputs" \
     HOME="/home/agent"
 
-# Set working directory (entrypoint will chown as needed)
+# Switch to agent user
+USER agent
+
+# Set working directory
 WORKDIR /home/agent
 
-# Use entrypoint script
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Use inline init script for credentials
+ENTRYPOINT ["/usr/local/bin/init.sh"]
 
 # Default to interactive bash shell
 CMD ["/bin/bash"]
