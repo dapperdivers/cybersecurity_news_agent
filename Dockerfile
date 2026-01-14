@@ -46,9 +46,6 @@ COPY src/claude-code/skills/ /home/agent/.claude/skills/
 # Copy MCP server configuration
 COPY src/claude-code/.mcp.json /home/agent/.mcp.json
 
-# Copy default feeds configuration
-COPY src/claude-code/config/default_feeds.json /app/mcp-servers/rss_fetcher/config/
-
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

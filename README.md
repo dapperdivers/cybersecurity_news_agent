@@ -158,9 +158,6 @@ cybersecurity_news_agent/
 │   │   ├── agents/              # Sub-agent definitions
 │   │   │   ├── news-aggregator.md
 │   │   │   └── security-analyst.md
-│   │   ├── config/              # Configuration files
-│   │   │   ├── .mcp.json            # MCP server registration
-│   │   │   └── default_feeds.json   # RSS feed sources
 │   │   └── skills/              # Reusable workflows with templates
 │   │       ├── security-intelligence-analysis/
 │   │       │   ├── SKILL.md
