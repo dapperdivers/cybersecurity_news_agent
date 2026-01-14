@@ -190,7 +190,14 @@ def main():
                 response = {
                     "jsonrpc": "2.0",
                     "id": request.get('id'),
-                    "result": result
+                    "result": {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": json.dumps(result)
+                            }
+                        ]
+                    }
                 }
 
             else:
