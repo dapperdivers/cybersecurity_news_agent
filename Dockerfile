@@ -43,8 +43,8 @@ COPY src/claude-code/agents/ /home/agent/.claude/agents/
 # Copy skills (if any)
 COPY src/claude-code/skills/ /home/agent/.claude/skills/
 
-# Copy MCP server configuration
-COPY src/claude-code/.mcp.json /home/agent/.mcp.json
+# Copy MCP server configuration to correct location for Claude Code
+COPY src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
 
 # Copy entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
