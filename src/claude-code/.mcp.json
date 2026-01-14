@@ -4,7 +4,9 @@
       "type": "stdio",
       "command": "python3",
       "args": ["/app/mcp-servers/rss_fetcher/server.py"],
-      "env": {}
+      "env": {
+        "DEFAULT_FEEDS_PATH": "/app/mcp-servers/rss_fetcher/config/default_feeds.json"
+      }
     },
     "text_analyzer": {
       "type": "stdio",
