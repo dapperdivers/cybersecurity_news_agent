@@ -24,9 +24,6 @@ services:
 
     # Volume mounts for local development
     volumes:
-      # Mount all MCP servers for live editing
-      - ./src/mcp-servers:/app/mcp-servers
-
       # Mount agent definitions and skills for live editing
       - ./src/claude-code/agents:/home/agent/.claude/agents
       - ./src/claude-code/skills:/home/agent/.claude/skills
@@ -34,11 +31,7 @@ services:
       # Mount outputs directory to access generated reports
       - ./outputs:/app/outputs
 
-      # Optional: Uncomment if you need to frequently edit default feeds
-      # (otherwise they're baked into the image and require rebuild to change)
-      # - ./src/claude-code/config/default_feeds.json:/app/mcp-servers/rss_fetcher/config/default_feeds.json
-
-    # Keep container running
+    # Default to interactive bash
     command: /bin/bash
 
     # Network configuration (optional)

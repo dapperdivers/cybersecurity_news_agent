@@ -1,7 +1,6 @@
 ---
 name: security-intelligence-analysis
-description: Analyze cybersecurity RSS feeds and generate structured intelligence reports (daily or weekly). Use when you need consistent JSON output for security briefings.
-allowed-tools: Read, Write, mcp__rss_fetcher__fetch_rss_feeds, mcp__text_analyzer__extract_key_points, mcp__text_analyzer__summarize_text
+description: Analyze cybersecurity RSS feeds and generate structured intelligence reports. Use when the user requests daily or weekly threat briefings, security news summaries, or structured intelligence reports.
 ---
 
 # Security Intelligence Analysis
@@ -11,9 +10,11 @@ Analyzes cybersecurity content from RSS feeds and generates structured JSON repo
 ## When to Use This Skill
 
 Use this skill when the user requests:
+
 - Daily cybersecurity news briefings
 - Weekly security summaries
 - Structured intelligence reports with consistent JSON output
+- Threat reports or security digests
 
 ## Workflow
 
@@ -29,41 +30,69 @@ Determine the analysis type from the user's request. Default to daily analysis.
 Read the appropriate template from the templates directory:
 
 **For Daily:**
-```
-Read('./templates/daily-output.json')
+```bash
+cat ./templates/daily-output.json
 ```
 
 **For Weekly:**
-```
-Read('./templates/weekly-output.json')
+```bash
+cat ./templates/weekly-output.json
 ```
 
 ### Step 3: Fetch RSS Feeds
 
-Use the RSS fetcher MCP tool to collect recent articles:
+Run the feed fetcher script to collect recent articles:
 
-**For Daily:**
-```
-mcp__rss_fetcher__fetch_rss_feeds(hours_back=24)
+**For Daily (24 hours):**
+```bash
+python3 ./scripts/fetch_feeds.py --hours 24
 ```
 
-**For Weekly:**
+**For Weekly (168 hours = 7 days):**
+```bash
+python3 ./scripts/fetch_feeds.py --hours 168
 ```
-mcp__rss_fetcher__fetch_rss_feeds(hours_back=168)
+
+The script outputs JSON with this structure:
+```json
+{
+  "entries": [
+    {
+      "title": "Article title",
+      "link": "https://...",
+      "summary": "Article summary...",
+      "published": "2026-01-27T10:00:00",
+      "source": "Feed Name"
+    }
+  ],
+  "count": 42,
+  "feeds_fetched": 8,
+  "hours_back": 24,
+  "timestamp": "2026-01-27T16:00:00"
+}
 ```
 
 ### Step 4: Analyze Content
 
-For each article fetched:
+For each article fetched, analyze it directly (no external API needed):
 
-1. **Extract key points** using `mcp__text_analyzer__extract_key_points`
-2. **Assess severity** based on content (critical, high, medium, low)
-3. **Categorize** the article:
+1. **Assess severity** based on content:
+   - **critical**: Active zero-days, widespread attacks, critical infrastructure threats
+   - **high**: Significant vulnerabilities, major breaches, APT activity
+   - **medium**: Notable security news, patches, advisories
+   - **low**: General industry news, research, tool releases
+
+2. **Categorize** the article:
    - **critical_alerts**: Active threats, zero-days, widespread attacks
    - **vulnerabilities**: CVEs, security flaws, patches
    - **breaches_incidents**: Data breaches, security incidents
    - **advisories**: Security advisories, warnings
    - **industry_news**: General security news, tool releases
+
+3. **Extract key information**:
+   - Impact assessment
+   - Affected systems/vendors
+   - Recommended actions
 
 4. **Filter out noise**: Remove marketing content, duplicates, low-value stories
 
@@ -114,11 +143,15 @@ For each article fetched:
 
 ### Step 6: Write Output
 
-Create the output file using the Write tool:
+Create the output file:
 
 **For Daily:**
 ```
 /app/outputs/daily-brief-YYYY-MM-DD.json
+```
+Or if running locally:
+```
+./outputs/daily-brief-YYYY-MM-DD.json
 ```
 
 **For Weekly:**
@@ -139,24 +172,24 @@ Create the output file using the Write tool:
 
 Before considering the task complete, verify:
 
-- ✅ Output file exists at expected path
-- ✅ File contains valid JSON (no markdown wrappers)
-- ✅ Structure matches the template
-- ✅ Executive summary is present and informative
-- ✅ Articles are properly categorized
-- ✅ Severity levels are assigned
-- ✅ Metadata is complete with accurate counts
-- ✅ All timestamps are ISO 8601 format
+- Output file exists at expected path
+- File contains valid JSON (no markdown wrappers)
+- Structure matches the template
+- Executive summary is present and informative
+- Articles are properly categorized
+- Severity levels are assigned
+- Metadata is complete with accurate counts
+- All timestamps are ISO 8601 format
 
 ## Example Output Preview
 
 After writing the file, present a brief summary to the user:
 
 ```
-✅ Security Intelligence Analysis Complete
+Security Intelligence Analysis Complete
 
 Type: [Daily/Weekly]
-Output: /app/outputs/[filename]
+Output: /path/to/output/file.json
 
 Executive Summary:
 [First 2 sentences of the executive summary]
@@ -167,13 +200,43 @@ Total Articles Analyzed: [count]
 Full analysis saved to output file.
 ```
 
+## Script Reference
+
+### fetch_feeds.py
+
+Location: `./scripts/fetch_feeds.py`
+
+**Arguments:**
+- `--hours N` or `-H N`: Fetch entries from the last N hours (default: 24)
+- `--feeds URL1 URL2...` or `-f`: Override default feeds with custom URLs
+- `--pretty` or `-p`: Pretty-print JSON output
+
+**Examples:**
+```bash
+# Default: last 24 hours from default feeds
+python3 ./scripts/fetch_feeds.py
+
+# Last 48 hours
+python3 ./scripts/fetch_feeds.py --hours 48
+
+# Weekly (7 days)
+python3 ./scripts/fetch_feeds.py --hours 168
+
+# Custom feeds
+python3 ./scripts/fetch_feeds.py --feeds "https://example.com/feed"
+```
+
+### Configuration
+
+Default feeds are configured in `./config/default_feeds.json`. Edit this file to add or remove RSS sources.
+
 ## Error Handling
 
 If issues occur:
 
-- **No articles fetched**: Check RSS feeds are accessible, create output with empty categories
-- **MCP tool fails**: Log error, attempt to continue with available data
-- **Template not found**: Log clear error message with expected path
+- **Script fails**: Check Python dependencies (feedparser, requests). Install with: `pip install feedparser requests`
+- **No articles fetched**: Check internet connectivity, verify feed URLs are accessible
+- **Template not found**: Ensure templates directory exists with daily-output.json and weekly-output.json
 - **Invalid analysis type**: Default to daily analysis
 
 ## Notes
@@ -183,3 +246,4 @@ If issues occur:
 - Filtering and categorization should be conservative - when in doubt, include the item
 - Weekly analysis should consolidate duplicate coverage across days
 - Severity assessment should consider: exploit availability, affected user base, ease of exploitation
+- No external API calls needed for text analysis - Claude analyzes content directly

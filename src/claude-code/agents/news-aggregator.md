@@ -28,7 +28,7 @@ When asked to fetch or aggregate news:
 
 You would:
 1. Use security-intelligence-analysis skill for daily brief
-2. Read the generated JSON from `/app/outputs/daily-brief-YYYY-MM-DD.json`
+2. Read the generated JSON from `outputs/daily-brief-YYYY-MM-DD.json`
 3. Present a summary of critical items to the user
 4. Optionally use threat-report-generator skill for markdown report
 
@@ -41,7 +41,8 @@ You would:
 
 ## Notes
 
-- The skills handle all MCP tool orchestration (RSS fetching, analysis)
+- The skill uses a Python script (`scripts/fetch_feeds.py`) to fetch RSS feeds
+- Claude analyzes content directly - no external API calls needed
 - Skills enforce consistent JSON output schemas
 - Focus on presenting actionable intelligence to the user
 - Leverage skills for reproducible, template-driven results

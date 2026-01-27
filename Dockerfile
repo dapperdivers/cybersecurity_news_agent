@@ -1,5 +1,6 @@
 # Cybersecurity News Agent Container
 # Self-contained container with Claude Code CLI and security-focused agents
+# Now uses skill-based architecture instead of MCP servers
 
 FROM node:20-bookworm-slim
 
@@ -15,13 +16,12 @@ RUN apt-get update && apt-get install -y \
 # Install Claude Code CLI globally
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install minimal Python libraries for MCP servers
+# Install Python libraries for skills scripts
 RUN pip3 install --no-cache-dir --break-system-packages \
     requests \
     feedparser \
     beautifulsoup4 \
-    python-dateutil \
-    anthropic
+    python-dateutil
 
 # Create agent user and home directory
 # Use numeric UID/GID for cross-platform compatibility
@@ -30,23 +30,17 @@ RUN groupadd -g 1000 agent 2>/dev/null || true \
     && mkdir -p /home/agent
 
 # Create application directory structure
-RUN mkdir -p /app/mcp-servers/rss_fetcher/config \
-    && mkdir -p /app/mcp-servers/text_analyzer \
-    && mkdir -p /app/outputs \
+RUN mkdir -p /app/outputs \
     && mkdir -p /home/agent/.claude/agents \
     && mkdir -p /home/agent/.claude/skills
-
-# Copy MCP servers (use numeric UID:GID for reliability)
-COPY --chown=1000:1000 src/mcp-servers/rss_fetcher/ /app/mcp-servers/rss_fetcher/
-COPY --chown=1000:1000 src/mcp-servers/text_analyzer/ /app/mcp-servers/text_analyzer/
 
 # Copy agent definitions
 COPY --chown=1000:1000 src/claude-code/agents/ /home/agent/.claude/agents/
 
-# Copy skills
+# Copy skills (includes scripts, templates, and config)
 COPY --chown=1000:1000 src/claude-code/skills/ /home/agent/.claude/skills/
 
-# Copy MCP server configuration to correct location for Claude Code
+# Copy MCP configuration (empty - skills-based architecture)
 COPY --chown=1000:1000 src/claude-code/.mcp.json /home/agent/.claude/.mcp.json
 
 # Create inline init script for credentials setup
@@ -62,8 +56,7 @@ exec "$@"' > /usr/local/bin/init.sh && chmod +x /usr/local/bin/init.sh
 RUN chown -R 1000:1000 /app/outputs /home/agent
 
 # Set environment variables
-ENV DEFAULT_FEEDS_PATH="/app/mcp-servers/rss_fetcher/config/default_feeds.json" \
-    OUTPUT_DIR="/app/outputs" \
+ENV OUTPUT_DIR="/app/outputs" \
     HOME="/home/agent"
 
 # Switch to non-root user (UID 1000)
