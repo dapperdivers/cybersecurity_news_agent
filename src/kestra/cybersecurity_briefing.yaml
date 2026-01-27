@@ -1,0 +1,103 @@
+id: cybersecurity_briefing
+namespace: homelab
+
+description: |
+  Automated cybersecurity intelligence briefing using Claude Code.
+
+  The security-intelligence-analysis skill handles the entire workflow:
+  fetching RSS feeds, analyzing threats, and generating structured reports.
+
+labels:
+  category: security
+  type: intelligence
+
+triggers:
+  - id: daily_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 7 * * *"  # Run daily at 7 AM
+
+inputs:
+  - id: analysis_type
+    type: STRING
+    defaults: "daily"
+    description: "Type of analysis: 'daily' or 'weekly'"
+
+  - id: hours_back
+    type: INT
+    defaults: 24
+    description: "Hours of news to fetch (24 for daily, 168 for weekly)"
+
+tasks:
+  - id: generate_briefing
+    type: io.kestra.plugin.scripts.shell.Commands
+    description: Run Claude Code with security-intelligence-analysis skill
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      image: ghcr.io/dapperdivers/cybersecurity_news_agent:latest
+      pullPolicy: IF_NOT_PRESENT
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: "{{ secret('CLAUDE_CODE_OAUTH_TOKEN') }}"
+    outputFiles:
+      - "analysis.json"
+      - "briefing.md"
+    commands:
+      - |
+        set +e
+        mkdir -p /app/outputs
+
+        echo "=== Running {{ inputs.analysis_type }} security analysis ==="
+
+        # Simple prompt - the skill handles everything
+        claude --dangerously-skip-permissions --print \
+          "Generate a {{ inputs.analysis_type }} cybersecurity briefing for the last {{ inputs.hours_back }} hours. Save outputs to /app/outputs/"
+
+        CLAUDE_EXIT=$?
+
+        # Copy outputs with predictable names for Kestra
+        if ls /app/outputs/*.json 1>/dev/null 2>&1; then
+          cp "$(ls /app/outputs/*.json | head -1)" analysis.json
+          echo "✅ JSON analysis found"
+        else
+          echo "⚠️ No JSON output - creating fallback"
+          echo '{"error": "Analysis failed", "exit_code": '$CLAUDE_EXIT', "timestamp": "'$(date -Iseconds)'"}' > analysis.json
+        fi
+
+        if ls /app/outputs/*.md 1>/dev/null 2>&1; then
+          cp "$(ls /app/outputs/*.md | head -1)" briefing.md
+          echo "✅ Markdown report found"
+        else
+          echo "⚠️ No markdown output - creating fallback"
+          printf "# Analysis Failed\n\nClaude exited with code %s. Check logs for details.\n" "$CLAUDE_EXIT" > briefing.md
+        fi
+
+        echo "=== Output files ==="
+        ls -la analysis.json briefing.md
+
+  - id: display_report
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      ============================================
+      CYBERSECURITY BRIEFING REPORT
+      ============================================
+
+      {{ read(outputs.generate_briefing.outputFiles['briefing.md']) }}
+
+      ============================================
+
+  - id: log_summary
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      ✅ Cybersecurity briefing complete!
+
+      📊 Analysis: {{ inputs.analysis_type }} ({{ inputs.hours_back }} hours)
+      📄 Report: {{ outputs.generate_briefing.outputFiles['briefing.md'] }}
+      📥 Download: kestra outputs download "{{ outputs.generate_briefing.outputFiles['analysis.json'] }}"
+
+outputs:
+  - id: report
+    type: STRING
+    value: "{{ outputs.generate_briefing.outputFiles['briefing.md'] }}"
+
+  - id: analysis
+    type: JSON
+    value: "{{ read(outputs.generate_briefing.outputFiles['analysis.json']) }}"
